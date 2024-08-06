@@ -28,7 +28,7 @@ public class UserDaoService {
 	// return one specific user
 	public User findOne(int id) {
 		Predicate<? super User> predicate = User -> User.getId() == id;
-		return users.stream().filter(predicate).findFirst().get();
+		return users.stream().filter(predicate).findFirst().orElse(null);
 	}
 	
 	// create & return user
@@ -36,5 +36,11 @@ public class UserDaoService {
 		user.setId(++countUser);
 		users.add(user);
 		return user;
+	}
+	
+	// to delete specific one user
+	public void deleteOne(int id) {
+		Predicate<? super User> predicate = users -> users.getId() == id;
+		users.removeIf(predicate);
 	}
 }
