@@ -3,7 +3,11 @@ package my.mood.restAPI.RestAPI.Web.Service.user;
 import java.net.URI;
 import java.util.List;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,15 +38,23 @@ public class UserResource {
 	
 	
 	// return the specific user
+	// adding link to retrieve all users
+	// EntityModel and WebMvcLinkBuilder
 	@GetMapping("users/{user_id}")
-	public User retrieveOneUser(@PathVariable int user_id) {
+	public EntityModel<User> retrieveOneUser(@PathVariable int user_id) {
 		User oneUser = daoService.findOne(user_id);
 		
 		if(oneUser == null) {
 			throw new UserNotFoundException("User id : " + user_id);
 		}
 		
-		return oneUser;
+		EntityModel<User> entityModel = EntityModel.of(oneUser);
+		
+		WebMvcLinkBuilder link = linkTo(methodOn(this.getClass()).retrieveAllUsers());
+		
+		entityModel.add(link.withRel("all-users"));		
+		
+        return entityModel;	
 	}
 	
 	
