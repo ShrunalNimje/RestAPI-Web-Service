@@ -2,6 +2,7 @@ package my.mood.restAPI.RestAPI.Web.Service.user;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import jakarta.validation.Valid;
+import my.mood.restAPI.RestAPI.Web.Service.jpa.UserRepository;
 
 @RestController
 public class UserResource {
@@ -25,15 +27,20 @@ public class UserResource {
 	@Autowired
 	public UserDaoService daoService;
 	
-	public UserResource(UserDaoService daoService) {
+	@Autowired
+	public UserRepository userRepository;
+	
+	public UserResource(UserDaoService daoService, UserRepository userRepository) {
 		this.daoService = daoService;
+		this.userRepository = userRepository;
 	}
 	
 	
 	// return all the users
 	@GetMapping("users")
 	public List<User> retrieveAllUsers() {
-		return daoService.findAll();
+		// return daoService.findAll();
+		return userRepository.findAll();
 	}
 	
 	
@@ -42,13 +49,14 @@ public class UserResource {
 	// EntityModel and WebMvcLinkBuilder
 	@GetMapping("users/{user_id}")
 	public EntityModel<User> retrieveOneUser(@PathVariable int user_id) {
-		User oneUser = daoService.findOne(user_id);
+		// User oneUser = daoService.findOne(user_id);
+		Optional<User> oneUser = userRepository.findById(user_id);
 		
-		if(oneUser == null) {
+		if(oneUser.equals(null)) {
 			throw new UserNotFoundException("User id : " + user_id);
 		}
 		
-		EntityModel<User> entityModel = EntityModel.of(oneUser);
+		EntityModel<User> entityModel = EntityModel.of(oneUser.get());
 		
 		WebMvcLinkBuilder link = linkTo(methodOn(this.getClass()).retrieveAllUsers());
 		
@@ -62,7 +70,8 @@ public class UserResource {
 	@PostMapping("users")
 	public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
 		
-		User createdUser = daoService.createUser(user);
+		// User createdUser = daoService.createUser(user);
+		User createdUser = userRepository.save(user);
 		
 		URI location = ServletUriComponentsBuilder.fromCurrentRequest()
 				.path("/{user_id}")
@@ -74,7 +83,8 @@ public class UserResource {
 	
 	@DeleteMapping("users/{user_id}")
 	public void deleteOne(@PathVariable int user_id) {
-		daoService.deleteOne(user_id);
+		// daoService.deleteOne(user_id);
+		userRepository.deleteById(user_id);
 	}
 	
 }
