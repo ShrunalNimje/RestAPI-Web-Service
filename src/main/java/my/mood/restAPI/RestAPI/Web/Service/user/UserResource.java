@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import jakarta.validation.Valid;
+import my.mood.restAPI.RestAPI.Web.Service.jpa.PostRepository;
 import my.mood.restAPI.RestAPI.Web.Service.jpa.UserRepository;
 
 @RestController
@@ -30,9 +31,13 @@ public class UserResource {
 	@Autowired
 	public UserRepository userRepository;
 	
-	public UserResource(UserDaoService daoService, UserRepository userRepository) {
+	@Autowired
+	public PostRepository postRepository;
+	
+	public UserResource(UserDaoService daoService, UserRepository userRepository, PostRepository postRepository) {
 		this.daoService = daoService;
 		this.userRepository = userRepository;
+		this.postRepository = postRepository;
 	}
 	
 	
@@ -87,4 +92,38 @@ public class UserResource {
 		userRepository.deleteById(user_id);
 	}
 	
+	// retrieve all posts for specific user
+	@GetMapping("users/{id}/posts")
+	public List<Post> retrieveAllPosts(@PathVariable int id) {
+		Optional<User> user = userRepository.findById(id);
+		
+		if(user.equals(null)) {
+			throw new UserNotFoundException("Id : " + id);
+		}
+		
+		return user.get().getPosts();
+	}
+	
+	// create post for specific users
+	@PostMapping("users/{id}/posts")
+	public ResponseEntity<Post> createPostForUser(@PathVariable int id, @Valid @RequestBody Post post) {
+		
+		Optional<User> user = userRepository.findById(id);
+		
+		if(user.equals(null)) {
+			throw new UserNotFoundException("id : " + id);
+		}
+		
+		post.setUser(user.get());
+		
+		Post savedPost = postRepository.save(post);
+		
+		URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+				.path("/{id}")
+				.buildAndExpand(savedPost.getId())
+				.toUri();
+		
+		return ResponseEntity.created(location).build();
+		
+	}
 }
